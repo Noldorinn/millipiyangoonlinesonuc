@@ -2,7 +2,7 @@
 
 ###
 
-<h2 align="left">Python + Selenium kullanarak `https://millipiyangoonline.com` üzerinden Süper Loto, Sayısal Loto, Şans Topu ve On Numara çekiliş sonuçlarını otomatik olarak günceller ve bir Excel dosyasına kaydeder.</h2>
+<h2 align="left">Python + Selenium kullanarak "https://millipiyangoonline.com" üzerinden Süper Loto, Sayısal Loto, Şans Topu ve On Numara çekiliş sonuçlarını otomatik olarak günceller ve bir Excel dosyasına kaydeder.</h2>
 
 ###
 
