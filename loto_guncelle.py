@@ -1,3 +1,4 @@
+from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -7,6 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 import logging
 import time
+import os
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -30,9 +32,9 @@ def get_latest_draw_info(df):
     except Exception as e:
         logger.warning(f"Veri analizinde hata: {e}")
         return None
-    
 
-def read_existing_data(file_path):
+def read_existing_data(file_name):
+    file_path = os.path.join(os.path.dirname(__file__), file_name)
     try:
         xls = pd.ExcelFile(file_path)
         return {
@@ -49,7 +51,6 @@ def read_existing_data(file_path):
             "ONNUMARA": (pd.DataFrame(), None),
             "SANSTOPU": (pd.DataFrame(), None),
         }
-    
 
 def scrape_lottery_results(url, lottery_type, existing_df, last_draw_number):
     driver.get(url)
@@ -58,14 +59,10 @@ def scrape_lottery_results(url, lottery_type, existing_df, last_draw_number):
 
     year_select = Select(wait_for_element((By.ID, "draw-year")))
     years = sorted([int(option.text) for option in year_select.options if not option.get_attribute("disabled")])
-    
+
     for year in years:
-        # Eğer Excel varsa (latest çekiliş varsa) ve bu yıl daha eskiyse → atla
         if last_draw_number and year < existing_df["Yıl"].max():
             continue
-
-        Select(wait_for_element((By.ID, "draw-year"))).select_by_visible_text(str(year))
-        time.sleep(1)
 
         Select(wait_for_element((By.ID, "draw-year"))).select_by_visible_text(str(year))
         time.sleep(1)
@@ -139,60 +136,45 @@ def clean_numeric_columns(df, columns):
     return df
 
 if __name__ == "__main__":
-    existing_data = read_existing_data("tum_loto_sonuclar.xlsx")
-    
-    # 🔎 En son çekiliş bilgilerini al ve anında terminale yazdır
+    data_file = "tum_loto_sonuclar.xlsx"
+    existing_data = read_existing_data(data_file)
+
     for key in existing_data:
         df = existing_data[key][0]
         latest = get_latest_draw_info(df)
         existing_data[key] = (df, latest)
+        logger.info(f"{key} ➤ En son çekiliş no: {latest}")
 
-        if key == "SUPERLOTO":
-            logger.info(f"Süper Loto   ➤  En son çekiliş no: {latest}")
-        elif key == "SAYISAL":
-            logger.info(f"Sayısal Loto ➤  En son çekiliş no: {latest}")
-        elif key == "ONNUMARA":
-            logger.info(f"On Numara    ➤  En son çekiliş no: {latest}")
-        elif key == "SANSTOPU":
-            logger.info(f"Şans Topu    ➤  En son çekiliş no: {latest}")
-
-
-    # En güncel çekiliş numaralarını belirle
     for key in existing_data:
         existing_data[key] = (existing_data[key][0], get_latest_draw_info(existing_data[key][0]))
 
-    # Yeni verileri çek
     new_super = scrape_lottery_results("https://www.millipiyangoonline.com/cekilis-sonuclari/super-loto", "SUPERLOTO", *existing_data["SUPERLOTO"])
     new_sayisal = scrape_lottery_results("https://www.millipiyangoonline.com/cekilis-sonuclari/sayisal-loto", "SAYISAL", *existing_data["SAYISAL"])
     new_onnumara = scrape_lottery_results("https://www.millipiyangoonline.com/cekilis-sonuclari/on-numara", "ONNUMARA", *existing_data["ONNUMARA"])
     new_sanstopu = scrape_lottery_results("https://www.millipiyangoonline.com/cekilis-sonuclari/sans-topu", "SANSTOPU", *existing_data["SANSTOPU"])
 
-    # Başlıklar
     super_loto_columns = ["Çekiliş No", "Sayı 1", "Sayı 2", "Sayı 3", "Sayı 4", "Sayı 5", "Sayı 6", "Ay", "Yıl"]
     sayisal_loto_columns = ["Çekiliş No", "Sayı 1", "Sayı 2", "Sayı 3", "Sayı 4", "Sayı 5", "Sayı 6", "Joker", "Süperstar", "Ay", "Yıl"]
     on_numara_columns = ["Çekiliş No"] + [f"Sayı {i}" for i in range(1, 23)] + ["Ay", "Yıl"]
     sans_topu_columns = ["Çekiliş No", "Sayı 1", "Sayı 2", "Sayı 3", "Sayı 4", "Sayı 5", "+ Sayı", "Ay", "Yıl"]
 
-    # Verileri birleştir
     super_loto_df = to_df_and_merge(new_super, existing_data["SUPERLOTO"][0], super_loto_columns)
     sayisal_loto_df = to_df_and_merge(new_sayisal, existing_data["SAYISAL"][0], sayisal_loto_columns)
     on_numara_df = to_df_and_merge(new_onnumara, existing_data["ONNUMARA"][0], on_numara_columns)
     sans_topu_df = to_df_and_merge(new_sanstopu, existing_data["SANSTOPU"][0], sans_topu_columns)
 
-    # Sayısal sütunlar
     super_loto_numeric_columns = ["Çekiliş No", "Sayı 1", "Sayı 2", "Sayı 3", "Sayı 4", "Sayı 5", "Sayı 6"]
     sayisal_loto_numeric_columns = ["Çekiliş No", "Sayı 1", "Sayı 2", "Sayı 3", "Sayı 4", "Sayı 5", "Sayı 6", "Joker", "Süperstar"]
     on_numara_numeric_columns = ["Çekiliş No"] + [f"Sayı {i}" for i in range(1, 23)]
     sans_topu_numeric_columns = ["Çekiliş No", "Sayı 1", "Sayı 2", "Sayı 3", "Sayı 4", "Sayı 5", "+ Sayı"]
 
-    # Dönüştür
     super_loto_df = clean_numeric_columns(super_loto_df, super_loto_numeric_columns)
     sayisal_loto_df = clean_numeric_columns(sayisal_loto_df, sayisal_loto_numeric_columns)
     on_numara_df = clean_numeric_columns(on_numara_df, on_numara_numeric_columns)
     sans_topu_df = clean_numeric_columns(sans_topu_df, sans_topu_numeric_columns)
 
-    # Excel'e yaz
-    with pd.ExcelWriter("tum_loto_sonuclar.xlsx") as writer:
+    excel_path = os.path.join(os.path.dirname(__file__), data_file)
+    with pd.ExcelWriter(excel_path) as writer:
         super_loto_df.to_excel(writer, sheet_name="Süper Loto", index=False)
         sayisal_loto_df.to_excel(writer, sheet_name="Sayısal Loto", index=False)
         on_numara_df.to_excel(writer, sheet_name="On Numara", index=False)
