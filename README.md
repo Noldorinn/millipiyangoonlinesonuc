@@ -6,7 +6,7 @@
 
 ###
 
-<p align="left">## 🚀 Özellikler<br><br>- ✅ Tüm loto türleri desteklenir: Süper Loto, Sayısal Loto, On Numara, Şans Topu<br>- 📅 İlk çalıştırmada tüm yıllar indirilir, sonraki çalıştırmalarda yalnızca eksikler alınır<br>- 📈 Veriler `tum_loto_sonuclar.xlsx` içinde saklanır<br>- 🔢 Çekilen sayılar sıralanır, özel sayılar hariç (Joker, Süperstar, + Sayı)<br>- 📊 Terminalde en son çekiliş bilgileri gösterilir</p>
+<p align="left">## 🚀 Özellikler<br><br>- ✅ Tüm loto türleri desteklenir: Süper Loto, Sayısal Loto, On Numara, Şans Topu<br>- 📅 İlk çalıştırmada tüm yıllar indirilir<br>- 📈 Veriler `tum_loto_sonuclar.xlsx` içinde saklanır<br>- 🔢 Çekilen sayılar sıralanır, özel sayılar hariç (Joker, Süperstar, + Sayı)<br>- 📊 Terminalde en son çekiliş bilgileri gösterilir</p>
 
 ###
 
